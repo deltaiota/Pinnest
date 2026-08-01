@@ -1,0 +1,19 @@
+# macOS
+.DS_Store
+
+# Xcode
+build/
+DerivedData/
+*.xcuserstate
+xcuserdata/
+*.moved-aside
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# Xcode keeps per-user scheme and workspace state here; Package.resolved is
+# deliberately *not* ignored, so the dependency stays pinned for everyone.
+*.xcscmblueprint
+*.xccheckout
+.swiftpm/xcode/package.xcworkspace/xcuserdata/
