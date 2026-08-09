@@ -118,21 +118,21 @@ final class PinController {
         applyGeometry(anchor: .topCentre)
     }
 
-    /// Eases back to a 1:1, fully opaque image. The window and the SwiftUI content are
-    /// animated together on the same curve and duration — animating only the window
-    /// would letterbox the image against a frame that had already snapped.
+    /// Eases back to a 1:1, unrotated, fully opaque image while keeping the toolbar's
+    /// top-centre anchor fixed.
     func reset() {
-        let size = PinGeometry.displaySize(base: state.baseSize, scale: 1, quarterTurns: state.quarterTurns)
+        let size = PinGeometry.displaySize(base: state.baseSize, scale: 1, quarterTurns: 0)
         let target = PinGeometry.constrain(
             PinGeometry.frame(size: size, anchoredAt: .topCentre, in: exactFrame),
             to: screenFrame
         )
         exactFrame = target
 
-        // Size is animated by the window alone — the image tracks its bounds — so only
-        // the fade needs a SwiftUI animation alongside it.
+        // Size is animated by the window; rotation and fade animate in SwiftUI against
+        // those live bounds.
         state.apply(scale: 1)
         withAnimation(.easeOut(duration: Self.resetDuration)) {
+            state.apply(quarterTurns: 0)
             state.apply(opacity: 1)
         }
 
@@ -163,8 +163,28 @@ final class PinController {
         layoutHint()
     }
 
+    func toggleStubborn() {
+        let stubborn = !state.isStubborn
+        let shared = !stubborn
+        state.apply(isStubborn: stubborn)
+
+        // `collectionBehavior` alone does not migrate an already ordered all-Spaces
+        // window. Re-order the image first so managed mode binds it to the active
+        // Desktop, then re-home its toolbar and hint windows onto that same Desktop.
+        panel.orderOut(nil)
+        panel.applySpacePolicy(shared: shared)
+        panel.orderFrontRegardless()
+        chrome?.rehome(attachedTo: panel, shared: shared)
+        layoutToolbar()
+        layoutHint()
+    }
+
+    func renderedImage() -> NSImage {
+        ImageRotation.rotated(state.image, quarterTurns: state.quarterTurns)
+    }
+
     func copyImage() {
-        ClipboardImage.write(ImageRotation.rotated(state.image, quarterTurns: state.quarterTurns))
+        ClipboardImage.write(renderedImage())
     }
 
     func move(by delta: CGSize) {
@@ -234,8 +254,8 @@ final class PinController {
 
     // MARK: Hints
 
-    /// Tracks which control the pointer is over. The text is derived at layout time
-    /// from current state, so toggling piercing rewrites the hint under the pointer.
+    /// Tracks which control the pointer is over. Content is derived at layout time
+    /// from current state, so toggles rewrite the hint under the pointer immediately.
     func setHint(_ hint: ToolbarHint?) {
         guard state.hoveredHint != hint else { return }
         state.apply(hoveredHint: hint)
@@ -247,7 +267,12 @@ final class PinController {
             chrome?.hideHint()
             return
         }
-        chrome?.showHint(hint.text(isPiercing: state.isPiercing), on: screenFrame)
+        chrome?.showHint(
+            hint,
+            isPiercing: state.isPiercing,
+            isStubborn: state.isStubborn,
+            on: screenFrame
+        )
     }
 
     // MARK: Geometry

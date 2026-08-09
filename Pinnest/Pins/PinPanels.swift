@@ -48,16 +48,25 @@ final class ToolbarPanel: NSPanel {
 
 extension NSPanel {
     /// Shared configuration for both of a pin's windows: borderless, transparent,
-    /// floating above ordinary windows, present on every Space including over
-    /// full-screen apps, and invisible to window cycling.
+    /// floating above ordinary windows, and invisible to window cycling.
     func configureAsPinSurface() {
         isOpaque = false
         backgroundColor = .clear
         level = .floating
-        collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary, .ignoresCycle]
+        applySpacePolicy(shared: true)
         hidesOnDeactivate = false
         isReleasedWhenClosed = false
         animationBehavior = .none
         hasShadow = false
+    }
+
+    /// `canJoinAllSpaces` is the always-visible behavior. `managed` is the documented
+    /// opposite: the window belongs to one Space and participates in Mission Control
+    /// normally. If that Space is removed, macOS reassigns managed windows to the
+    /// surviving Desktop selected by Mission Control; the child chrome follows.
+    func applySpacePolicy(shared: Bool) {
+        collectionBehavior = shared
+            ? [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary, .ignoresCycle]
+            : [.managed, .ignoresCycle]
     }
 }

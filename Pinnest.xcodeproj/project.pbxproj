@@ -8,6 +8,8 @@
 
 /* Begin PBXBuildFile section */
 		AA0000010000000000000003 /* LaunchAtLogin in Frameworks */ = {isa = PBXBuildFile; productRef = AA0000010000000000000002 /* LaunchAtLogin */; };
+		BB0000010000000000000003 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = BB0000010000000000000002 /* Sparkle */; };
+		CC0000010000000000000003 /* SFSafeSymbols in Frameworks */ = {isa = PBXBuildFile; productRef = CC0000010000000000000002 /* SFSafeSymbols */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -44,6 +46,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				AA0000010000000000000003 /* LaunchAtLogin in Frameworks */,
+				BB0000010000000000000003 /* Sparkle in Frameworks */,
+				CC0000010000000000000003 /* SFSafeSymbols in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -96,6 +100,8 @@
 			name = Pinnest;
 			packageProductDependencies = (
 				AA0000010000000000000002 /* LaunchAtLogin */,
+				BB0000010000000000000002 /* Sparkle */,
+				CC0000010000000000000002 /* SFSafeSymbols */,
 			);
 			productName = Pinnest;
 			productReference = 28F4D6523019E8A900B60493 /* Pinnest.app */;
@@ -154,6 +160,8 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				AA0000010000000000000001 /* XCRemoteSwiftPackageReference "LaunchAtLogin-Modern" */,
+				BB0000010000000000000001 /* XCRemoteSwiftPackageReference "Sparkle" */,
+				CC0000010000000000000001 /* XCRemoteSwiftPackageReference "SFSafeSymbols" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 28F4D6533019E8A900B60493 /* Products */;
@@ -343,6 +351,8 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Configuration/Pinnest-Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = Pinnest;
 				INFOPLIST_KEY_LSUIElement = YES;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -353,6 +363,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = d.iota.Pinnest;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
+				SPARKLE_PUBLIC_ED_KEY = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
@@ -376,6 +387,8 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Configuration/Pinnest-Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = Pinnest;
 				INFOPLIST_KEY_LSUIElement = YES;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -386,6 +399,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = d.iota.Pinnest;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
+				SPARKLE_PUBLIC_ED_KEY = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
@@ -478,6 +492,22 @@
 				minimumVersion = 1.1.0;
 			};
 		};
+		BB0000010000000000000001 /* XCRemoteSwiftPackageReference "Sparkle" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/sparkle-project/Sparkle";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.9.4;
+			};
+		};
+		CC0000010000000000000001 /* XCRemoteSwiftPackageReference "SFSafeSymbols" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/SFSafeSymbols/SFSafeSymbols";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 7.0.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -485,6 +515,16 @@
 			isa = XCSwiftPackageProductDependency;
 			package = AA0000010000000000000001 /* XCRemoteSwiftPackageReference "LaunchAtLogin-Modern" */;
 			productName = LaunchAtLogin;
+		};
+		BB0000010000000000000002 /* Sparkle */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = BB0000010000000000000001 /* XCRemoteSwiftPackageReference "Sparkle" */;
+			productName = Sparkle;
+		};
+		CC0000010000000000000002 /* SFSafeSymbols */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = CC0000010000000000000001 /* XCRemoteSwiftPackageReference "SFSafeSymbols" */;
+			productName = SFSafeSymbols;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

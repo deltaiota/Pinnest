@@ -31,6 +31,8 @@ final class ToolbarPresenter {
         // under the pointer.
         size = hosting.fittingSize
         panel.setContentSize(size)
+        panel.hasShadow = true
+        panel.invalidateShadow()
         panel.alphaValue = 0
         panel.ignoresMouseEvents = true
         panel.orderFrontRegardless()
@@ -84,8 +86,14 @@ final class ToolbarPresenter {
         hideWork?.cancel()
     }
 
-    func showHint(_ text: String, on screen: CGRect) {
-        hint.show(text, near: panel.frame, on: screen)
+    func showHint(_ hintValue: ToolbarHint, isPiercing: Bool, isStubborn: Bool, on screen: CGRect) {
+        hint.show(
+            hintValue,
+            isPiercing: isPiercing,
+            isStubborn: isStubborn,
+            near: panel.frame,
+            on: screen
+        )
     }
 
     func hideHint() {
@@ -96,6 +104,18 @@ final class ToolbarPresenter {
     func setAcceptsKey(_ accepts: Bool) {
         panel.acceptsKey = accepts
         if accepts { panel.makeKey() }
+    }
+
+    /// Collection behavior does not migrate a window that is already ordered on all
+    /// Spaces. Detach and re-order both chrome windows so `managed` really binds them
+    /// to the active Space rather than merely changing their flags.
+    func rehome(attachedTo parent: NSWindow, shared: Bool) {
+        panel.parent?.removeChildWindow(panel)
+        panel.orderOut(nil)
+        panel.applySpacePolicy(shared: shared)
+        panel.orderFrontRegardless()
+        parent.addChildWindow(panel, ordered: .above)
+        hint.rehome(attachedTo: parent, shared: shared)
     }
 
     func close() {

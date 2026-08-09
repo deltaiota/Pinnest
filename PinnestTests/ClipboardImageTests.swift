@@ -89,4 +89,28 @@ struct ClipboardImageTests {
         let read = try #require(ClipboardImage.read(from: pasteboard))
         #expect(read.size.width / read.size.height == 2)
     }
+
+    @Test func filePromiseWritesAPNGOnlyWhenFulfilled() async throws {
+        let promise = try ImageFilePromise(image: makeImage())
+        let provider = promise.provider()
+        let fileName = promise.filePromiseProvider(provider, fileNameForType: provider.fileType)
+        #expect(fileName.hasSuffix(".png"))
+
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let destination = directory.appendingPathComponent(fileName)
+
+        let writeError = await withCheckedContinuation { continuation in
+            promise.filePromiseProvider(provider, writePromiseTo: destination) { error in
+                continuation.resume(returning: error)
+            }
+        }
+
+        #expect(writeError == nil)
+        let data = try Data(contentsOf: destination)
+        #expect(data.starts(with: [0x89, 0x50, 0x4E, 0x47]))
+        #expect(NSImage(data: data) != nil)
+    }
 }

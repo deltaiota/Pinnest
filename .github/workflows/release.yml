@@ -1,0 +1,236 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+# Required repository configuration before pushing a v* tag:
+# Variables:
+#   APPLE_TEAM_ID: Apple Developer Program team identifier.
+#   SPARKLE_PUBLIC_ED_KEY: output from Sparkle's generate_keys tool.
+# Secrets:
+#   DEVELOPER_ID_APPLICATION_CERTIFICATE: base64-encoded Developer ID .p12.
+#   DEVELOPER_ID_APPLICATION_PASSWORD: password used when exporting that .p12.
+#   APPLE_ID: Apple ID used by notarytool.
+#   APPLE_APP_SPECIFIC_PASSWORD: app-specific password for that Apple ID.
+#   SPARKLE_PRIVATE_ED_KEY: contents of the file exported by generate_keys -x.
+# The public and private Sparkle keys must be generated as one pair.
+
+jobs:
+  release:
+    runs-on: macos-15
+    env:
+      APPLE_TEAM_ID: ${{ vars.APPLE_TEAM_ID }}
+      SPARKLE_PUBLIC_ED_KEY: ${{ vars.SPARKLE_PUBLIC_ED_KEY }}
+      DEVELOPER_ID_APPLICATION_CERTIFICATE: ${{ secrets.DEVELOPER_ID_APPLICATION_CERTIFICATE }}
+      DEVELOPER_ID_APPLICATION_PASSWORD: ${{ secrets.DEVELOPER_ID_APPLICATION_PASSWORD }}
+      APPLE_ID: ${{ secrets.APPLE_ID }}
+      APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+      SPARKLE_PRIVATE_ED_KEY: ${{ secrets.SPARKLE_PRIVATE_ED_KEY }}
+      GH_TOKEN: ${{ github.token }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate release configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+          missing=()
+          for name in \
+            APPLE_TEAM_ID \
+            SPARKLE_PUBLIC_ED_KEY \
+            DEVELOPER_ID_APPLICATION_CERTIFICATE \
+            DEVELOPER_ID_APPLICATION_PASSWORD \
+            APPLE_ID \
+            APPLE_APP_SPECIFIC_PASSWORD \
+            SPARKLE_PRIVATE_ED_KEY
+          do
+            if [[ -z "${!name:-}" ]]; then
+              missing+=("$name")
+            fi
+          done
+          if (( ${#missing[@]} )); then
+            printf 'Missing release configuration: %s\n' "${missing[*]}" >&2
+            exit 1
+          fi
+          if [[ "$SPARKLE_PUBLIC_ED_KEY" == "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=" ]]; then
+            echo "SPARKLE_PUBLIC_ED_KEY must not use the local-development placeholder." >&2
+            exit 1
+          fi
+
+      - name: Import Developer ID certificate
+        shell: bash
+        run: |
+          set -euo pipefail
+          keychain="$RUNNER_TEMP/release-signing.keychain-db"
+          certificate="$RUNNER_TEMP/developer-id-application.p12"
+          keychain_password="$(openssl rand -hex 24)"
+          printf '%s' "$DEVELOPER_ID_APPLICATION_CERTIFICATE" | /usr/bin/base64 -D > "$certificate"
+          security create-keychain -p "$keychain_password" "$keychain"
+          security set-keychain-settings -lut 21600 "$keychain"
+          security unlock-keychain -p "$keychain_password" "$keychain"
+          security import "$certificate" \
+            -k "$keychain" \
+            -P "$DEVELOPER_ID_APPLICATION_PASSWORD" \
+            -T /usr/bin/codesign \
+            -T /usr/bin/security
+          security set-key-partition-list \
+            -S apple-tool:,apple: \
+            -s \
+            -k "$keychain_password" \
+            "$keychain"
+          security list-keychains -d user -s "$keychain"
+          echo "RELEASE_KEYCHAIN=$keychain" >> "$GITHUB_ENV"
+
+      - name: Verify tag matches app version
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="$(sed -n 's/.*MARKETING_VERSION = \([^;]*\);/\1/p' Pinnest.xcodeproj/project.pbxproj | sort -u)"
+          build="$(sed -n 's/.*CURRENT_PROJECT_VERSION = \([^;]*\);/\1/p' Pinnest.xcodeproj/project.pbxproj | sort -u)"
+          tag_version="${GITHUB_REF_NAME#v}"
+          [[ "$version" == "$tag_version" ]] || {
+            echo "Tag $GITHUB_REF_NAME does not match MARKETING_VERSION $version." >&2
+            exit 1
+          }
+          [[ "$build" =~ ^[0-9]+$ ]] || {
+            echo "CURRENT_PROJECT_VERSION must be one integer, found: $build" >&2
+            exit 1
+          }
+          echo "APP_VERSION=$version" >> "$GITHUB_ENV"
+          echo "APP_BUILD=$build" >> "$GITHUB_ENV"
+
+      - name: Archive application
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build
+          env GIT_CONFIG_COUNT=1 \
+            GIT_CONFIG_KEY_0=safe.bareRepository \
+            GIT_CONFIG_VALUE_0=all \
+            xcodebuild archive \
+              -project Pinnest.xcodeproj \
+              -scheme Pinnest \
+              -destination 'generic/platform=macOS' \
+              -archivePath "$PWD/build/Pinnest.xcarchive" \
+              -clonedSourcePackagesDirPath "$PWD/build/SourcePackages" \
+              -skipMacroValidation \
+              -skipPackagePluginValidation \
+              -onlyUsePackageVersionsFromResolvedFile \
+              CODE_SIGN_STYLE=Manual \
+              CODE_SIGN_IDENTITY='Developer ID Application' \
+              DEVELOPMENT_TEAM="$APPLE_TEAM_ID" \
+              SPARKLE_PUBLIC_ED_KEY="$SPARKLE_PUBLIC_ED_KEY"
+
+      - name: Export signed application
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > build/ExportOptions.plist <<PLIST
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>method</key>
+            <string>developer-id</string>
+            <key>signingStyle</key>
+            <string>manual</string>
+            <key>signingCertificate</key>
+            <string>Developer ID Application</string>
+            <key>teamID</key>
+            <string>${APPLE_TEAM_ID}</string>
+          </dict>
+          </plist>
+          PLIST
+          xcodebuild -exportArchive \
+            -archivePath "$PWD/build/Pinnest.xcarchive" \
+            -exportPath "$PWD/build/export" \
+            -exportOptionsPlist "$PWD/build/ExportOptions.plist"
+          codesign --verify --deep --strict --verbose=2 build/export/Pinnest.app
+          embedded_key="$(/usr/libexec/PlistBuddy -c 'Print SUPublicEDKey' build/export/Pinnest.app/Contents/Info.plist)"
+          [[ "$embedded_key" == "$SPARKLE_PUBLIC_ED_KEY" ]] || {
+            echo "Exported app does not contain the configured Sparkle public key." >&2
+            exit 1
+          }
+
+      - name: Notarize and staple application
+        shell: bash
+        run: |
+          set -euo pipefail
+          ditto -c -k --sequesterRsrc --keepParent \
+            build/export/Pinnest.app \
+            build/notarization.zip
+          xcrun notarytool submit build/notarization.zip \
+            --apple-id "$APPLE_ID" \
+            --team-id "$APPLE_TEAM_ID" \
+            --password "$APPLE_APP_SPECIFIC_PASSWORD" \
+            --wait
+          xcrun stapler staple build/export/Pinnest.app
+          xcrun stapler validate build/export/Pinnest.app
+
+      - name: Package update
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build/updates
+          archive="build/updates/Pinnest-${APP_VERSION}.zip"
+          ditto -c -k --sequesterRsrc --keepParent build/export/Pinnest.app "$archive"
+          echo "UPDATE_ARCHIVE=$archive" >> "$GITHUB_ENV"
+
+      - name: Create draft GitHub release
+        shell: bash
+        run: |
+          set -euo pipefail
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" "$UPDATE_ARCHIVE" --clobber
+          else
+            gh release create "$GITHUB_REF_NAME" "$UPDATE_ARCHIVE" \
+              --draft \
+              --generate-notes \
+              --title "Pinnest ${APP_VERSION}"
+          fi
+          gh release view "$GITHUB_REF_NAME" --json body --jq .body \
+            > "build/updates/Pinnest-${APP_VERSION}.md"
+
+      - name: Generate signed Sparkle appcast
+        shell: bash
+        run: |
+          set -euo pipefail
+          tool="$PWD/build/SourcePackages/artifacts/sparkle/Sparkle/bin/generate_appcast"
+          [[ -x "$tool" ]] || {
+            echo "Sparkle generate_appcast tool was not resolved at $tool" >&2
+            exit 1
+          }
+          printf '%s' "$SPARKLE_PRIVATE_ED_KEY" | "$tool" \
+            --ed-key-file - \
+            --download-url-prefix "https://github.com/deltaiota/Pinnest/releases/download/${GITHUB_REF_NAME}/" \
+            --embed-release-notes \
+            --link "https://github.com/deltaiota/Pinnest" \
+            --maximum-versions 3 \
+            --maximum-deltas 0 \
+            build/updates
+          test -s build/updates/appcast.xml
+
+      - name: Publish release and appcast
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh release upload "$GITHUB_REF_NAME" build/updates/appcast.xml --clobber
+          gh release edit "$GITHUB_REF_NAME" --draft=false
+
+      - name: Remove release keychain
+        if: always()
+        shell: bash
+        run: |
+          if [[ -n "${RELEASE_KEYCHAIN:-}" ]]; then
+            security delete-keychain "$RELEASE_KEYCHAIN" || true
+          fi

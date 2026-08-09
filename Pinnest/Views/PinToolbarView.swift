@@ -4,6 +4,7 @@
 //
 
 import AppKit
+import SFSafeSymbols
 import SwiftUI
 
 struct PinToolbarView: View {
@@ -14,28 +15,24 @@ struct PinToolbarView: View {
         HStack(spacing: 4) {
             CloseButton { controller.close() }
 
-            ToolbarButton(symbol: "doc.on.doc", hint: .copy, controller: controller) {
-                controller.copyImage()
-            }
+            CopyDragButton(controller: controller)
 
             RotateButton(controller: controller)
 
-            ToolbarButton(symbol: "arrow.counterclockwise", hint: .reset, controller: controller) {
+            ToolbarButton(symbol: .arrowCounterclockwise, hint: .reset, controller: controller) {
                 controller.reset()
             }
 
             separator
-
-            NumberField(
-                symbol: "arrow.up.left.and.arrow.down.right",
+            ToolbarNumberField(
+                symbol: .arrowUpLeftAndArrowDownRight,
                 hint: .scale,
                 value: state.scale,
                 range: PinGeometry.scaleRange,
                 controller: controller
             ) { controller.setScale($0) }
-
-            NumberField(
-                symbol: "circle.lefthalf.filled",
+            ToolbarNumberField(
+                symbol: .circleLefthalfFilled,
                 hint: .opacity,
                 value: state.opacity,
                 range: PinGeometry.opacityRange,
@@ -44,12 +41,17 @@ struct PinToolbarView: View {
 
             separator
 
-            ToolbarButton(
-                symbol: state.isPiercing ? "cursorarrow.slash" : "cursorarrow",
+            ToggleSymbolButton(
+                symbol: piercingSymbol,
                 hint: .piercing,
-                controller: controller,
-                isOn: state.isPiercing
+                controller: controller
             ) { controller.togglePiercing() }
+
+            ToggleSymbolButton(
+                symbol: state.isStubborn ? .lockFill : .lockSlashFill,
+                hint: .stubborn,
+                controller: controller
+            ) { controller.toggleStubborn() }
 
             DragHandle(controller: controller)
         }
@@ -63,6 +65,16 @@ struct PinToolbarView: View {
     private var separator: some View {
         Divider().frame(height: 14)
     }
+
+    /// Piercing is intentionally the exception to the filled-toggle treatment: the
+    /// plain pointer is clearer than a boxed pointer. On is unobstructed; off is slash.
+    private var piercingSymbol: SFSymbol {
+        if #available(macOS 26.0, *) {
+            state.isPiercing ? .pointerArrow : .pointerArrowSlash
+        } else {
+            SFSymbol(rawValue: state.isPiercing ? "cursorarrow" : "cursorarrow.slash")
+        }
+    }
 }
 
 /// The window close button, borrowed wholesale: a red disc that only shows its glyph
@@ -71,16 +83,25 @@ private struct CloseButton: View {
     let action: () -> Void
 
     @State private var isHovering = false
+    @State private var animationTrigger = 0
+    @State private var isClosing = false
 
     var body: some View {
-        Button(action: action) {
+        Button {
+            guard !isClosing else { return }
+            isClosing = true
+            animationTrigger += 1
+            // Keep the window alive long enough for the requested bounce to be visible.
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.12, execute: action)
+        } label: {
             Circle()
                 .fill(Color(red: 1, green: 0.37, blue: 0.34))
                 .overlay(Circle().strokeBorder(.black.opacity(0.12), lineWidth: 0.5))
                 .overlay {
-                    Image(systemName: "xmark")
+                    Image(systemSymbol: .xmark)
                         .font(.system(size: 7, weight: .bold))
                         .foregroundStyle(.black.opacity(isHovering ? 0.55 : 0))
+                        .symbolEffect(.bounce, value: animationTrigger)
                 }
                 .frame(width: 12, height: 12)
                 .frame(width: 22, height: 20)
@@ -91,27 +112,102 @@ private struct CloseButton: View {
     }
 }
 
+/// Rectangular by design: six-dot grips on both sides distinguish this from a normal
+/// click-only button. A click copies; crossing the drag threshold promises a PNG file.
+private struct CopyDragButton: View {
+    unowned let controller: PinController
+
+    @State private var isHovering = false
+    @State private var animationTrigger = 0
+
+    var body: some View {
+        CopyDragArea(
+            image: { controller.renderedImage() },
+            onClick: {
+                animationTrigger += 1
+                controller.copyImage()
+            }
+        )
+        .frame(width: 58, height: 20)
+        .background(
+            isHovering ? AnyShapeStyle(.quaternary) : AnyShapeStyle(.clear),
+            in: RoundedRectangle(cornerRadius: 5)
+        )
+        .overlay {
+            HStack(spacing: 3) {
+                SixDotGrip()
+                Image(systemSymbol: .documentOnDocument)
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(.primary)
+                    .symbolEffect(.bounce, value: animationTrigger)
+                SixDotGrip()
+            }
+            .allowsHitTesting(false)
+        }
+        .contentShape(Rectangle())
+        .onHover { hovering in
+            isHovering = hovering
+            controller.setHint(hovering ? .copy : nil)
+        }
+    }
+}
+
+/// Two rotated `ellipsis` symbols: three dots each, six total, the SF Symbols version
+/// of a compact `::` drag affordance.
+private struct SixDotGrip: View {
+    var body: some View {
+        HStack(spacing: -2) {
+            dotColumn
+            dotColumn
+        }
+        .foregroundStyle(.secondary)
+    }
+
+    private var dotColumn: some View {
+        Image(systemSymbol: .ellipsis)
+            .font(.system(size: 7, weight: .semibold))
+            .rotationEffect(.degrees(90))
+            .frame(width: 5, height: 12)
+    }
+}
+
 /// Rotates clockwise, counterclockwise while shift is held. The icon follows the live
-/// modifier state so the button always shows what it is about to do.
+/// modifier state and wiggles in the direction the image is about to turn.
 private struct RotateButton: View {
     unowned let controller: PinController
 
     @State private var isShiftDown = false
     @State private var isHovering = false
     @State private var shiftWatcher: Timer?
+    @State private var clockwiseAnimationTrigger = 0
+    @State private var counterclockwiseAnimationTrigger = 0
 
     var body: some View {
-        ToolbarButton(
-            symbol: isShiftDown ? "rotate.left" : "rotate.right",
-            hint: .rotate,
-            controller: controller
-        ) {
-            // SwiftUI hands button actions no modifiers, so the live flags are the only
-            // way to tell a shift-click from a plain one.
-            controller.rotate(clockwise: !NSEvent.modifierFlags.contains(.shift))
+        Button {
+            let counterclockwise = NSEvent.modifierFlags.contains(.shift)
+            if counterclockwise {
+                counterclockwiseAnimationTrigger += 1
+            } else {
+                clockwiseAnimationTrigger += 1
+            }
+            controller.rotate(clockwise: !counterclockwise)
+        } label: {
+            Image(systemSymbol: isShiftDown ? .rotateLeft : .rotateRight)
+                .font(.system(size: 11, weight: .medium))
+                .frame(width: 22, height: 20)
+                .background(
+                    isHovering ? AnyShapeStyle(.quaternary) : AnyShapeStyle(.clear),
+                    in: RoundedRectangle(cornerRadius: 5)
+                )
+                .contentShape(Rectangle())
+                .symbolEffect(.wiggle.clockwise, value: clockwiseAnimationTrigger)
+                .symbolEffect(.wiggle.counterClockwise, value: counterclockwiseAnimationTrigger)
         }
+        .buttonStyle(.plain)
+        .foregroundStyle(.primary)
         .onHover { hovering in
             isHovering = hovering
+            controller.setHint(hovering ? .rotate : nil)
             if hovering {
                 startWatchingShift()
             } else {
@@ -140,18 +236,22 @@ private struct RotateButton: View {
     }
 }
 
+/// Ordinary action button: one click, one bounce, one action.
 private struct ToolbarButton: View {
-    let symbol: String
+    let symbol: SFSymbol
     let hint: ToolbarHint
     unowned let controller: PinController
-    var isOn = false
     let action: () -> Void
 
     @State private var isHovering = false
+    @State private var animationTrigger = 0
 
     var body: some View {
-        Button(action: action) {
-            Image(systemName: symbol)
+        Button {
+            animationTrigger += 1
+            action()
+        } label: {
+            Image(systemSymbol: symbol)
                 .font(.system(size: 11, weight: .medium))
                 .frame(width: 22, height: 20)
                 .background(
@@ -159,9 +259,10 @@ private struct ToolbarButton: View {
                     in: RoundedRectangle(cornerRadius: 5)
                 )
                 .contentShape(Rectangle())
+                .symbolEffect(.bounce, value: animationTrigger)
         }
         .buttonStyle(.plain)
-        .foregroundStyle(isOn ? Color.accentColor : .primary)
+        .foregroundStyle(.primary)
         .onHover { hovering in
             isHovering = hovering
             controller.setHint(hovering ? hint : nil)
@@ -169,105 +270,50 @@ private struct ToolbarButton: View {
     }
 }
 
-/// Shows a percentage next to the icon for what it controls. Dragging adjusts it
-/// without ever taking focus; clicking opens a field for an exact number, which is the
-/// only moment Pinnest needs the keyboard.
-private struct NumberField: View {
-    let symbol: String
+/// State switch: no accent tint and no bounce. The slash appears or disappears through
+/// SF Symbols' layer-aware magic-replace transition.
+private struct ToggleSymbolButton: View {
+    let symbol: SFSymbol
     let hint: ToolbarHint
-    let value: CGFloat
-    let range: ClosedRange<CGFloat>
     unowned let controller: PinController
-    let onChange: (CGFloat) -> Void
+    let action: () -> Void
 
-    @State private var isEditing = false
-    @State private var text = ""
-    @State private var dragOrigin: CGFloat?
-    @FocusState private var isFocused: Bool
+    @State private var isHovering = false
 
     var body: some View {
-        HStack(spacing: 3) {
-            Image(systemName: symbol)
-                .font(.system(size: 9))
-                .foregroundStyle(.secondary)
-
-            if isEditing {
-                TextField("", text: $text)
-                    .textFieldStyle(.plain)
-                    .multilineTextAlignment(.trailing)
-                    .focused($isFocused)
-                    .onSubmit(commit)
-                    .onExitCommand(perform: finishEditing)
-                    .onAppear {
-                        text = Self.format(value)
-                        isFocused = true
-                    }
-            } else {
-                Text(Self.format(value) + "%")
-                    .monospacedDigit()
-                    .frame(maxWidth: .infinity, alignment: .trailing)
+        Button {
+            withAnimation(.snappy(duration: 0.22)) {
+                action()
             }
+        } label: {
+            Image(systemSymbol: symbol)
+                .font(.system(size: 11, weight: .medium))
+                .frame(width: 22, height: 20)
+                .background(
+                    isHovering ? AnyShapeStyle(.quaternary) : AnyShapeStyle(.clear),
+                    in: RoundedRectangle(cornerRadius: 5)
+                )
+                .contentShape(Rectangle())
+                .contentTransition(.symbolEffect(.replace.magic(fallback: .downUp)))
         }
-        .font(.system(size: 11))
-        .padding(.horizontal, 5)
-        .frame(width: 64, height: 20)
-        .background(.quaternary.opacity(0.4), in: RoundedRectangle(cornerRadius: 5))
-        .contentShape(Rectangle())
-        .onTapGesture(perform: beginEditing)
-        .gesture(dragGesture)
-        .onHover { controller.setHint($0 ? hint : nil) }
-    }
-
-    /// A vertical drag walks the value: 200 points of travel covers the whole range.
-    private var dragGesture: some Gesture {
-        DragGesture(minimumDistance: 2)
-            .onChanged { gesture in
-                let origin = dragOrigin ?? value
-                dragOrigin = origin
-                onChange(origin - gesture.translation.height / 200)
-            }
-            .onEnded { _ in dragOrigin = nil }
-    }
-
-    private func beginEditing() {
-        guard !isEditing else { return }
-        controller.beginEditingNumber()
-        isEditing = true
-    }
-
-    private func commit() {
-        let cleaned = text
-            .trimmingCharacters(in: .whitespaces)
-            .replacingOccurrences(of: "%", with: "")
-        if let percent = Double(cleaned) {
-            onChange(PinGeometry.clamp(CGFloat(percent) / 100, to: range))
+        .buttonStyle(.plain)
+        .foregroundStyle(.primary)
+        .onHover { hovering in
+            isHovering = hovering
+            controller.setHint(hovering ? hint : nil)
         }
-        finishEditing()
-    }
-
-    private func finishEditing() {
-        isEditing = false
-        isFocused = false
-        controller.endEditingNumber()
-    }
-
-    private static func format(_ value: CGFloat) -> String {
-        String(Int((value * 100).rounded()))
     }
 }
 
-/// No hint: the grabbed-hand cursor already says "drag me", which is the whole point of
-/// changing it.
+/// No hint: the grabbed-hand cursor and six dots already say "drag me".
 private struct DragHandle: View {
     unowned let controller: PinController
 
     var body: some View {
         WindowDragArea { delta in controller.move(by: delta) }
-            .frame(width: 22, height: 20)
+            .frame(width: 24, height: 20)
             .overlay {
-                Image(systemName: "line.3.horizontal")
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(.secondary)
+                SixDotGrip()
                     .allowsHitTesting(false)
             }
     }

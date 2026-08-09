@@ -31,6 +31,33 @@ extension PinWindowSuite {
             #expect(panel.collectionBehavior.contains(.fullScreenAuxiliary))
         }
 
+        @Test func stubbornDefaultsOffAndTogglesAllWindowsTogether() throws {
+            let manager = PinManager(hoverMonitoring: false)
+            defer { manager.closeAll() }
+            manager.pin(PinTest.image(width: 200, height: 100))
+            let controller = manager.pins[0]
+            let panel = try #require(PinTest.panel(of: controller))
+
+            #expect(controller.state.isStubborn == false)
+            #expect(panel.collectionBehavior.contains(.canJoinAllSpaces))
+
+            controller.toggleStubborn()
+            #expect(panel.isOnActiveSpace)
+
+            #expect(controller.state.isStubborn)
+            let localWindows = [panel] + (panel.childWindows ?? [])
+            #expect(localWindows.count == 3)
+            #expect(localWindows.allSatisfy { $0.collectionBehavior.contains(.managed) })
+            #expect(localWindows.allSatisfy { !$0.collectionBehavior.contains(.canJoinAllSpaces) })
+            #expect(!localWindows.contains { !$0.isOnActiveSpace })
+
+            controller.toggleStubborn()
+
+            #expect(controller.state.isStubborn == false)
+            #expect(localWindows.allSatisfy { $0.collectionBehavior.contains(.canJoinAllSpaces) })
+            #expect(localWindows.allSatisfy { $0.collectionBehavior.contains(.fullScreenAuxiliary) })
+        }
+
         /// The pin must never take keyboard focus, which is the whole point of a reference
         /// image that floats over the app you are actually working in.
         @Test func pinPanelRefusesKeyStatus() {

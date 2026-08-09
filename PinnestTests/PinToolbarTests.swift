@@ -33,6 +33,7 @@ extension PinWindowSuite {
             let controller = manager.pins[0]
             let pin = try #require(PinTest.panel(of: controller))
             let toolbar = try #require(toolbarPanel(near: pin))
+            #expect(toolbar.hasShadow)
 
             var origins: [CGPoint] = [toolbar.frame.origin]
             for step in 0 ..< 40 {
@@ -58,12 +59,14 @@ extension PinWindowSuite {
 
             controller.setScale(3.4)
             controller.setOpacity(0.4)
+            controller.rotate()
             controller.reset()
             // The animation has to land before the geometry is final.
             try await PinTest.settle(0.5)
 
             #expect(controller.state.scale == 1)
             #expect(controller.state.opacity == 1)
+            #expect(controller.state.quarterTurns == 0)
             #expect(abs(pin.frame.width - size.width) < 1)
             #expect(abs(pin.frame.height - size.height) < 1)
             #expect(abs(pin.frame.maxY - top) < 1)
@@ -75,16 +78,32 @@ extension PinWindowSuite {
             defer { manager.closeAll() }
             manager.pin(PinTest.image(width: 200, height: 100))
             let controller = manager.pins[0]
+            func text(_ hint: ToolbarHint, piercing: Bool = false, stubborn: Bool = false) -> String {
+                hint.plainText(isPiercing: piercing, isStubborn: stubborn)
+            }
+            func string(_ resource: LocalizedStringResource) -> String {
+                String(localized: resource)
+            }
 
             controller.updateHover(at: CGPoint(x: 0, y: 0))
             controller.setHint(.piercing)
 
-            #expect(ToolbarHint.piercing.text(isPiercing: false).contains("off"))
-            #expect(ToolbarHint.piercing.text(isPiercing: true).contains("on"))
+            #expect(text(.piercing) == "\(string("Piercing off")) - \(string("image takes clicks"))")
+            #expect(text(.piercing, piercing: true) ==
+                "\(string("Piercing on")) - \(string("clicks pass through"))")
 
             controller.togglePiercing()
             #expect(controller.state.hoveredHint == .piercing)
             #expect(controller.state.isPiercing)
+
+            #expect(text(.stubborn, stubborn: true) ==
+                "\(string("Stubborn on")) - \(string("image visible only on this Desktop"))")
+            #expect(text(.stubborn) ==
+                "\(string("Stubborn off")) - \(string("image visible on every Desktop"))")
+            #expect(text(.copy) == "\(string("Copy to clipboard")) / \(string("Drag as image file"))")
+            #expect(text(.rotate) ==
+                "\(string("Rotate clockwise")) / Shift + \(string("Rotate counterclockwise"))")
+            #expect(text(.reset) == string("Reset size, rotation & opacity"))
         }
 
         @Test func hidingTheToolbarClearsTheHint() async throws {

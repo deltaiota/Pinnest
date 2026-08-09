@@ -28,10 +28,22 @@ final class HintPresenter {
         parent.addChildWindow(panel, ordered: .above)
     }
 
-    /// Rebuilds the label every time: the text is derived from live state, so toggling
-    /// a setting rewrites the hint already under the pointer.
-    func show(_ text: String, near toolbar: CGRect, on screen: CGRect) {
-        let hosting = NSHostingView(rootView: PinHintView(text: text))
+    /// Rebuilds the label every time: the text and symbols are derived from live state,
+    /// so toggling a setting rewrites the hint already under the pointer.
+    func show(
+        _ hint: ToolbarHint,
+        isPiercing: Bool,
+        isStubborn: Bool,
+        near toolbar: CGRect,
+        on screen: CGRect
+    ) {
+        let hosting = NSHostingView(
+            rootView: PinHintView(
+                hint: hint,
+                isPiercing: isPiercing,
+                isStubborn: isStubborn
+            )
+        )
         panel.contentView = hosting
         panel.setFrame(
             PinGeometry.hintFrame(toolbar: toolbar, size: hosting.fittingSize, screen: screen),
@@ -45,6 +57,14 @@ final class HintPresenter {
             context.duration = 0.1
             panel.animator().alphaValue = 0
         }
+    }
+
+    func rehome(attachedTo parent: NSWindow, shared: Bool) {
+        panel.parent?.removeChildWindow(panel)
+        panel.orderOut(nil)
+        panel.applySpacePolicy(shared: shared)
+        panel.orderFrontRegardless()
+        parent.addChildWindow(panel, ordered: .above)
     }
 
     func close() {
