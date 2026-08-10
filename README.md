@@ -82,5 +82,3 @@ Pinnest is built with **SwiftUI** for its menu and content, plus **AppKit** for 
 - `PinnestTests/`: geometry, clipboard, real-window behavior, toolbar, updater, and localization contracts
 - `.github/workflows/`: signed, notarized Sparkle release and appcast generation
 - `Docs/`: localized documentation and the shared app-icon asset
-
-Built with [LaunchAtLogin-Modern](https://github.com/sindresorhus/LaunchAtLogin-Modern), [Sparkle](https://github.com/sparkle-project/Sparkle), and [SFSafeSymbols](https://github.com/SFSafeSymbols/SFSafeSymbols).
