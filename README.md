@@ -43,13 +43,9 @@ Copy an image, pin it from the menu bar, and keep working. Each image remains in
 
 ## Install & Run
 
-1. Download the latest ZIP from the official [GitHub Releases](https://github.com/deltaiota/Pinnest/releases/latest) page.
+1. Download the latest ZIP from the [GitHub Releases](https://github.com/deltaiota/Pinnest/releases/latest) page.
 2. Extract `Pinnest.app` and move it to `/Applications`.
-3. On first launch, right-click the app and choose **Open**. If macOS still blocks it, approve Pinnest under System Settings → Privacy & Security and open it again.
-
-> [!IMPORTANT]
->
-> Official releases are intentionally Apple-unsigned and are authenticated by Sparkle EdDSA. Download Pinnest only from the official `deltaiota/Pinnest` repository. After the first approved launch, in-app updates are signature-verified automatically.
+3. On first launch, right-click the app and choose **Open.** If macOS still blocks it, approve Pinnest under System Settings → Privacy & Security and open it again.
 
 ## Building
 
