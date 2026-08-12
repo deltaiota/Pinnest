@@ -17,3 +17,6 @@ xcuserdata/
 *.xcscmblueprint
 *.xccheckout
 .swiftpm/xcode/package.xcworkspace/xcuserdata/
+
+# Sparkle signing keys
+*.sparkle.private-key

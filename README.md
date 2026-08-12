@@ -43,11 +43,13 @@ Copy an image, pin it from the menu bar, and keep working. Each image remains in
 
 ## Install & Run
 
-> [!NOTE]
+1. Download the latest ZIP from the official [GitHub Releases](https://github.com/deltaiota/Pinnest/releases/latest) page.
+2. Extract `Pinnest.app` and move it to `/Applications`.
+3. On first launch, right-click the app and choose **Open**. If macOS still blocks it, approve Pinnest under System Settings → Privacy & Security and open it again.
+
+> [!IMPORTANT]
 >
-> Pinnest is not published yet, so no prebuilt application is currently available. Build and run it locally with Xcode using the instructions below.
->
-> After the repository and application are published, this section will point to the official release download. Do not download builds redistributed elsewhere.
+> Official releases are intentionally Apple-unsigned and are authenticated by Sparkle EdDSA. Download Pinnest only from the official `deltaiota/Pinnest` repository. After the first approved launch, in-app updates are signature-verified automatically.
 
 ## Building
 
@@ -76,6 +78,7 @@ Pinnest is built with **SwiftUI** for its menu and content, plus **AppKit** for 
 - `Pinnest/Views/`: SwiftUI image, toolbar, hint, About, numeric controls, and AppKit drag bridges
 - `Configuration/`: generated Info.plist additions for signed Sparkle updates
 - `PinnestTests/`: geometry, clipboard, real-window behavior, toolbar, updater, and localization contracts
-- `.github/workflows/`: signed, notarized Sparkle release and appcast generation
+- `.github/workflows/`: Apple-unsigned Sparkle release packaging and signed appcast generation
 - `Pinnest/Icon/`: Icon Composer source and exported default, dark, clear, and tinted app-icon variants
+- `ReleaseNotes/`: optional versioned Markdown embedded into GitHub Releases and the Sparkle appcast
 - `Docs/`: localized documentation
