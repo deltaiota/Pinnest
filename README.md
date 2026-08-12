@@ -16,11 +16,7 @@
 
 ### <div><!--Empty Lines--><br /><br /></div>
 
-<p align="center">
-  <img src="/Docs/AppIcon.png" width="160" height="160" alt="Pinnest app icon" />
-</p>
-
-# <p align="center">Pinnest</p><br />
+# <p align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="/Pinnest/Icon/Pinnest-iOS-Dark-1024x1024@1x.png?raw=true" /><img width="172" src="/Pinnest/Icon/Pinnest-iOS-Default-1024x1024@1x.png?raw=true" /></picture><br />Pinnest</p><br />
 
 ###### <p align="center">Keep a reference exactly where you need it.</p>
 
@@ -81,4 +77,5 @@ Pinnest is built with **SwiftUI** for its menu and content, plus **AppKit** for 
 - `Configuration/`: generated Info.plist additions for signed Sparkle updates
 - `PinnestTests/`: geometry, clipboard, real-window behavior, toolbar, updater, and localization contracts
 - `.github/workflows/`: signed, notarized Sparkle release and appcast generation
-- `Docs/`: localized documentation and the shared app-icon asset
+- `Pinnest/Icon/`: Icon Composer source and exported default, dark, clear, and tinted app-icon variants
+- `Docs/`: localized documentation
