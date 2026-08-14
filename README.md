@@ -47,6 +47,10 @@ Copy an image, pin it from the menu bar, and keep working. Each image remains in
 2. Extract `Pinnest.app` and move it to `/Applications`.
 3. On first launch, right-click the app and choose **Open.** If macOS still blocks it, approve Pinnest under System Settings → Privacy & Security and open it again.
 
+> [!NOTE]
+>
+> Official releases are signed with a free Apple Development certificate and authenticated by Sparkle EdDSA, but they are not notarized. macOS may still require first-launch approval through Finder or Privacy & Security.
+
 ## Building
 
 ```sh
@@ -74,7 +78,7 @@ Pinnest is built with **SwiftUI** for its menu and content, plus **AppKit** for 
 - `Pinnest/Views/`: SwiftUI image, toolbar, hint, About, numeric controls, and AppKit drag bridges
 - `Configuration/`: generated Info.plist additions for signed Sparkle updates
 - `PinnestTests/`: geometry, clipboard, real-window behavior, toolbar, updater, and localization contracts
-- `.github/workflows/`: Apple-unsigned Sparkle release packaging and signed appcast generation
+- `.github/workflows/`: Apple Development-signed release packaging and Sparkle-signed appcast generation
 - `Pinnest/Icon/`: Icon Composer source and exported default, dark, clear, and tinted app-icon variants
 - `ReleaseNotes/`: optional versioned Markdown embedded into GitHub Releases and the Sparkle appcast
 - `Docs/`: localized documentation

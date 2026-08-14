@@ -20,3 +20,4 @@ xcuserdata/
 
 # Sparkle signing keys
 *.sparkle.private-key
+*.p12

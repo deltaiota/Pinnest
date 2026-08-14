@@ -61,8 +61,13 @@ extension PinWindowSuite {
             controller.setOpacity(0.4)
             controller.rotate()
             controller.reset()
-            // The animation has to land before the geometry is final.
-            try await PinTest.settle(0.5)
+            let animationSettled = try await PinTest.wait {
+                abs(pin.frame.width - size.width) < 1 &&
+                    abs(pin.frame.height - size.height) < 1 &&
+                    abs(pin.frame.maxY - top) < 1 &&
+                    pin.hasShadow
+            }
+            #expect(animationSettled)
 
             #expect(controller.state.scale == 1)
             #expect(controller.state.opacity == 1)
