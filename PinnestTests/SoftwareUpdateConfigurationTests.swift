@@ -26,7 +26,7 @@ struct SoftwareUpdateConfigurationTests {
     @Test func appMetadataSupportsMenuAndAboutLabels() throws {
         let info = try #require(Bundle.main.infoDictionary)
         #expect(info["CFBundleDisplayName"] as? String == "Pinnest")
-        #expect(info["CFBundleShortVersionString"] as? String == "1.0.1")
-        #expect(info["CFBundleVersion"] as? String == "2")
+        #expect(info["CFBundleShortVersionString"] as? String == "1.0.2")
+        #expect(info["CFBundleVersion"] as? String == "3")
     }
 }
