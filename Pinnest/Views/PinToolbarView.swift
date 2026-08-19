@@ -14,6 +14,7 @@ struct PinToolbarView: View {
     var body: some View {
         HStack(spacing: 4) {
             CloseButton { controller.close() }
+            HideButton { controller.hide() }
 
             CopyDragButton(controller: controller)
 
@@ -99,6 +100,43 @@ private struct CloseButton: View {
                 .overlay(Circle().strokeBorder(.black.opacity(0.12), lineWidth: 0.5))
                 .overlay {
                     Image(systemSymbol: .xmark)
+                        .font(.system(size: 7, weight: .bold))
+                        .foregroundStyle(.black.opacity(isHovering ? 0.55 : 0))
+                        .symbolEffect(.bounce, value: animationTrigger)
+                }
+                .frame(width: 12, height: 12)
+                .frame(width: 22, height: 20)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .onHover { isHovering = $0 }
+    }
+}
+
+/// Mirrors the yellow macOS traffic-light control. Like minimise, the horizontal
+/// glyph appears on hover; the short bounce completes before the pin collapses.
+private struct HideButton: View {
+    let action: () -> Void
+
+    @State private var isHovering = false
+    @State private var animationTrigger = 0
+    @State private var isHiding = false
+
+    var body: some View {
+        Button {
+            guard !isHiding else { return }
+            isHiding = true
+            animationTrigger += 1
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
+                isHiding = false
+                action()
+            }
+        } label: {
+            Circle()
+                .fill(Color(red: 1, green: 0.74, blue: 0.18))
+                .overlay(Circle().strokeBorder(.black.opacity(0.12), lineWidth: 0.5))
+                .overlay {
+                    Image(systemSymbol: .minus)
                         .font(.system(size: 7, weight: .bold))
                         .foregroundStyle(.black.opacity(isHovering ? 0.55 : 0))
                         .symbolEffect(.bounce, value: animationTrigger)
@@ -310,7 +348,7 @@ private struct DragHandle: View {
     unowned let controller: PinController
 
     var body: some View {
-        WindowDragArea { delta in controller.move(by: delta) }
+        WindowDragArea(onDrag: { delta in controller.move(by: delta) })
             .frame(width: 24, height: 20)
             .overlay {
                 SixDotGrip()

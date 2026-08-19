@@ -65,6 +65,22 @@
         }
       }
     },
+    "Close All Hidden Pins" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Close All Hidden Pins"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "关闭所有隐藏的图像"
+          }
+        }
+      }
+    },
     "Close All Pins" : {
       "localizations" : {
         "en" : {
@@ -77,6 +93,86 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "关闭所有钉住的图像"
+          }
+        }
+      }
+    },
+    "Close All Visible Pins" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Close All Visible Pins"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "关闭所有未隐藏的图像"
+          }
+        }
+      }
+    },
+    "Close Pins on Other Desktops" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Close Pins on Other Desktops"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "关闭其他桌面上钉住的图像"
+          }
+        }
+      }
+    },
+    "Close Pins on This Desktop" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Close Pins on This Desktop"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "关闭此桌面上钉住的图像"
+          }
+        }
+      }
+    },
+    "Close Visible Pins on Other Desktops" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Close Visible Pins on Other Desktops"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "关闭其他桌面上未隐藏的图像"
+          }
+        }
+      }
+    },
+    "Close Visible Pins on This Desktop" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Close Visible Pins on This Desktop"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "关闭此桌面上未隐藏的图像"
           }
         }
       }
@@ -269,6 +365,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "钉住剪贴板的图像"
+          }
+        }
+      }
+    },
+    "Pin from File…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pin from File…"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "从文件钉住图像…"
           }
         }
       }

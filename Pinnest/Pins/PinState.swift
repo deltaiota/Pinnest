@@ -20,6 +20,8 @@ final class PinState {
     private(set) var quarterTurns = 0
     private(set) var isPiercing = false
     private(set) var isStubborn = false
+    private(set) var isHidden = false
+    private(set) var isHiddenIndicatorVisible = false
     private(set) var isToolbarVisible = false
     private(set) var hoveredHint: ToolbarHint?
 
@@ -74,6 +76,14 @@ extension PinState {
 
     func apply(isStubborn: Bool) {
         self.isStubborn = isStubborn
+    }
+
+    func apply(isHidden: Bool) {
+        self.isHidden = isHidden
+    }
+
+    func apply(isHiddenIndicatorVisible: Bool) {
+        self.isHiddenIndicatorVisible = isHiddenIndicatorVisible
     }
 
     func apply(isToolbarVisible: Bool) {

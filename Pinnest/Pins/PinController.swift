@@ -14,19 +14,22 @@ final class PinController {
     let state: PinState
     /// Long enough to read as motion, short enough not to feel like waiting.
     private static let resetDuration: TimeInterval = 0.22
+    static let hiddenIndicatorSize = CGSize(width: 44, height: 44)
+    static let transformDuration: TimeInterval = 0.22
 
-    private let panel = PinPanel(
+    let panel = PinPanel(
         contentRect: .zero,
         styleMask: [.borderless, .nonactivatingPanel],
         backing: .buffered,
         defer: false
     )
-    private var chrome: ToolbarPresenter?
+    var chrome: ToolbarPresenter?
 
-    private weak var manager: PinManager?
-    private var shadowRefreshWork: DispatchWorkItem?
-    private var isEditingNumber = false
-    private var moveObserver: (any NSObjectProtocol)?
+    weak var manager: PinManager?
+    var shadowRefreshWork: DispatchWorkItem?
+    var isEditingNumber = false
+    var moveObserver: (any NSObjectProtocol)?
+    var isTransforming = false
 
     /// The authoritative geometry, in exact coordinates.
     ///
@@ -35,8 +38,16 @@ final class PinController {
     /// cursor-anchored zoom would visibly crawl off the pointer after a second of
     /// scrolling. So the controller keeps its own float-exact frame and only ever
     /// writes it to the window.
-    private var exactFrame: CGRect = .zero
-    private var isApplyingGeometry = false
+    var exactFrame: CGRect = .zero
+    var isApplyingGeometry = false
+
+    var isHidden: Bool {
+        state.isHidden
+    }
+
+    var isOnActiveSpace: Bool {
+        panel.isOnActiveSpace
+    }
 
     init(image: NSImage, centredOn centre: CGPoint, manager: PinManager) {
         let screen = NSScreen.screens.first { $0.frame.contains(centre) } ?? NSScreen.main
@@ -57,7 +68,7 @@ final class PinController {
             queue: .main
         ) { [weak self] _ in
             MainActor.assumeIsolated {
-                guard let self, !self.isApplyingGeometry else { return }
+                guard let self, !self.isApplyingGeometry, !self.state.isHidden else { return }
                 // Dragging moves the window behind our back, so the exact frame has to
                 // pick the new origin back up.
                 self.exactFrame.origin = self.panel.frame.origin
@@ -69,12 +80,14 @@ final class PinController {
     // MARK: Setup
 
     private func configurePanel(centredOn centre: CGPoint) {
+        let screen = NSScreen.screens.first { $0.frame.contains(centre) } ?? NSScreen.main
+        let availableFrame = screen?.visibleFrame ?? .zero
         panel.configureAsPinSurface()
         panel.hasShadow = true
         panel.contentView = NSHostingView(rootView: PinImageView(state: state, controller: self))
         exactFrame = PinGeometry.constrain(
             PinGeometry.frame(centeredOn: centre, size: state.displaySize),
-            to: screenFrame
+            to: availableFrame
         )
         panel.setFrame(exactFrame, display: false)
     }
@@ -126,6 +139,18 @@ final class PinController {
             PinGeometry.frame(size: size, anchoredAt: .topCentre, in: exactFrame),
             to: screenFrame
         )
+        if state.isHidden {
+            exactFrame = target
+            state.apply(scale: 1)
+            state.apply(quarterTurns: 0)
+            state.apply(opacity: 1)
+            isApplyingGeometry = true
+            panel.setFrame(hiddenFrame(for: target), display: true)
+            isApplyingGeometry = false
+            updateShadow()
+            layoutToolbar()
+            return
+        }
         exactFrame = target
 
         // Size is animated by the window; rotation and fade animate in SwiftUI against
@@ -154,61 +179,6 @@ final class PinController {
         }
     }
 
-    func togglePiercing() {
-        let piercing = !state.isPiercing
-        state.apply(isPiercing: piercing)
-        panel.ignoresMouseEvents = piercing
-        // The hint text depends on this, and the pointer is still sitting on the
-        // button, so refresh it in place rather than waiting for a re-hover.
-        layoutHint()
-    }
-
-    func toggleStubborn() {
-        let stubborn = !state.isStubborn
-        let shared = !stubborn
-        state.apply(isStubborn: stubborn)
-
-        // `collectionBehavior` alone does not migrate an already ordered all-Spaces
-        // window. Re-order the image first so managed mode binds it to the active
-        // Desktop, then re-home its toolbar and hint windows onto that same Desktop.
-        panel.orderOut(nil)
-        panel.applySpacePolicy(shared: shared)
-        panel.orderFrontRegardless()
-        chrome?.rehome(attachedTo: panel, shared: shared)
-        layoutToolbar()
-        layoutHint()
-    }
-
-    func renderedImage() -> NSImage {
-        ImageRotation.rotated(state.image, quarterTurns: state.quarterTurns)
-    }
-
-    func copyImage() {
-        ClipboardImage.write(renderedImage())
-    }
-
-    func move(by delta: CGSize) {
-        var frame = exactFrame
-        frame.origin.x += delta.width
-        frame.origin.y += delta.height
-        exactFrame = PinGeometry.constrain(frame, to: screenFrame)
-
-        isApplyingGeometry = true
-        panel.setFrameOrigin(exactFrame.origin)
-        isApplyingGeometry = false
-        layoutToolbar()
-    }
-
-    func close() {
-        if let moveObserver { NotificationCenter.default.removeObserver(moveObserver) }
-        shadowRefreshWork?.cancel()
-        chrome?.close()
-        chrome = nil
-        panel.orderOut(nil)
-        panel.close()
-        manager?.remove(self)
-    }
-
     // MARK: Number editing
 
     /// Focus is granted only for as long as a number is being typed, then handed
@@ -235,6 +205,11 @@ final class PinController {
     }
 
     func updateHover(at point: CGPoint) {
+        guard !state.isHidden, !isTransforming else {
+            chrome?.cancelScheduledHide()
+            setToolbar(visible: false)
+            return
+        }
         if hoverRegion.contains(point) {
             chrome?.cancelScheduledHide()
             setToolbar(visible: true)
@@ -245,7 +220,7 @@ final class PinController {
         }
     }
 
-    private func setToolbar(visible: Bool) {
+    func setToolbar(visible: Bool) {
         guard state.isToolbarVisible != visible else { return }
         state.apply(isToolbarVisible: visible)
         if !visible { setHint(nil) }
@@ -262,7 +237,7 @@ final class PinController {
         layoutHint()
     }
 
-    private func layoutHint() {
+    func layoutHint() {
         guard let hint = state.hoveredHint, state.isToolbarVisible else {
             chrome?.hideHint()
             return
@@ -277,7 +252,7 @@ final class PinController {
 
     // MARK: Geometry
 
-    private var screenFrame: CGRect {
+    var screenFrame: CGRect {
         let centre = CGPoint(x: exactFrame.midX, y: exactFrame.midY)
         let screen = NSScreen.screens.first { $0.frame.contains(centre) } ?? NSScreen.main
         return screen?.visibleFrame ?? .zero
@@ -295,7 +270,7 @@ final class PinController {
         exactFrame = frame
 
         isApplyingGeometry = true
-        panel.setFrame(frame, display: true)
+        panel.setFrame(state.isHidden ? hiddenFrame(for: frame) : frame, display: true)
         isApplyingGeometry = false
         scheduleShadowRefresh()
         layoutToolbar()
@@ -303,9 +278,10 @@ final class PinController {
 
     /// A window shadow is derived from the alpha of what the window drew, so a
     /// translucent pin gets a soft box of shadow behind the whole image — exactly the
-    /// haze the user is trying to see through. Shadows are for opaque pins only.
-    private func updateShadow() {
-        let wantsShadow = state.opacity >= 1
+    /// haze the user is trying to see through. Expanded shadows are opaque-only;
+    /// the compact material indicator always keeps its native window shadow.
+    func updateShadow() {
+        let wantsShadow = state.isHidden || state.opacity >= 1
         if panel.hasShadow != wantsShadow {
             panel.hasShadow = wantsShadow
         }
@@ -318,7 +294,7 @@ final class PinController {
     ///
     /// Debounced rather than merely deferred: a zoom delivers scroll events by the
     /// hundred, and forcing a shadow recompute on each one flickers.
-    private func scheduleShadowRefresh() {
+    func scheduleShadowRefresh() {
         shadowRefreshWork?.cancel()
         let work = DispatchWorkItem { [weak self] in
             MainActor.assumeIsolated {
@@ -336,7 +312,7 @@ final class PinController {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.05, execute: work)
     }
 
-    private func layoutToolbar() {
+    func layoutToolbar() {
         chrome?.layout(pin: exactFrame, screen: screenFrame)
         layoutHint()
     }

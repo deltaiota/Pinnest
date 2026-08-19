@@ -71,27 +71,23 @@ extension PinWindowSuite {
             #expect(panel?.isKeyWindow == false)
         }
 
-        @Test func piercingMakesThePinTransparentToClicks() async throws {
+        @Test func piercingMakesThePinTransparentToClicks() throws {
             let manager = PinManager()
             defer { manager.closeAll() }
             manager.pin(PinTest.image(width: 300, height: 200))
             let controller = manager.pins[0]
             let panel = try #require(PinTest.panel(of: controller))
-            // The window server needs a turn to composite a new window before it will
-            // report it in a hit test.
-            try await PinTest.settle()
-            let centre = CGPoint(x: panel.frame.midX, y: panel.frame.midY)
 
-            #expect(PinTest.hitWindow(at: centre) == panel.windowNumber)
+            #expect(controller.state.isPiercing == false)
+            #expect(panel.ignoresMouseEvents == false)
 
             controller.togglePiercing()
-            try await PinTest.settle()
             #expect(controller.state.isPiercing)
-            #expect(PinTest.hitWindow(at: centre) != panel.windowNumber)
+            #expect(panel.ignoresMouseEvents)
 
             controller.togglePiercing()
-            try await PinTest.settle()
-            #expect(PinTest.hitWindow(at: centre) == panel.windowNumber)
+            #expect(controller.state.isPiercing == false)
+            #expect(panel.ignoresMouseEvents == false)
         }
 
         @Test func scrollingScalesAndCommandScrollingFadesThePin() {

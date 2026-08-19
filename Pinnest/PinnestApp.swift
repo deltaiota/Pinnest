@@ -5,15 +5,13 @@
 //  Created by KrLite on 2026/7/29.
 //
 
-import SFSafeSymbols
 import Sparkle
 import SwiftUI
 
 @main
 struct PinnestApp: App {
-    static let aboutWindowID = "about"
-
-    @State private var pins = PinManager()
+    @NSApplicationDelegateAdaptor(PinnestApplicationDelegate.self) private var applicationDelegate
+    @State private var pins = PinManager.shared
     @State private var clipboard = ClipboardWatcher()
     private let updaterController: SPUStandardUpdaterController
 
@@ -26,42 +24,27 @@ struct PinnestApp: App {
     }
 
     var body: some Scene {
-        Window("About Pinnest", id: Self.aboutWindowID) {
-            AboutView()
-        }
-        .windowResizability(.contentSize)
-        .restorationBehavior(.disabled)
-        .defaultLaunchBehavior(.suppressed)
-        .defaultPosition(.center)
-        .commands {
-            CommandGroup(replacing: .appInfo) {
-                AboutMenuButton()
-            }
-        }
-
-        MenuBarExtra("Pinnest", systemSymbol: .mappinAndEllipse) {
+        MenuBarExtra {
             MenuBarContent(
                 pins: pins,
                 clipboard: clipboard,
                 updater: updaterController.updater
             )
+        } label: {
+            MenuBarDropTarget(pins: pins)
         }
         .menuBarExtraStyle(.menu)
     }
 }
 
-/// Native SwiftUI action shared by the standard App menu and menu-bar menu.
 struct AboutMenuButton: View {
-    @Environment(\.openWindow) private var openWindow
-
     private var appName: String {
         Bundle.main.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String ?? "Pinnest"
     }
 
     var body: some View {
         Button("About \(appName)") {
-            NSApp.activate(ignoringOtherApps: true)
-            openWindow(id: PinnestApp.aboutWindowID)
+            AboutWindowPresenter.shared.show()
         }
     }
 }

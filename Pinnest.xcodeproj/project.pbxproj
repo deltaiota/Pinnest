@@ -10,6 +10,7 @@
 		AA0000010000000000000003 /* LaunchAtLogin in Frameworks */ = {isa = PBXBuildFile; productRef = AA0000010000000000000002 /* LaunchAtLogin */; };
 		BB0000010000000000000003 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = BB0000010000000000000002 /* Sparkle */; };
 		CC0000010000000000000003 /* SFSafeSymbols in Frameworks */ = {isa = PBXBuildFile; productRef = CC0000010000000000000002 /* SFSafeSymbols */; };
+		E10000010000000000000001 /* Pin with Pinnest.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = E10000030000000000000003 /* Pin with Pinnest.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -20,11 +21,33 @@
 			remoteGlobalIDString = 28F4D6513019E8A900B60493;
 			remoteInfo = Pinnest;
 		};
+		E10000020000000000000002 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 28F4D64A3019E8A900B60493 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = E10000080000000000000008;
+			remoteInfo = "Pin with Pinnest";
+		};
 /* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		E10000070000000000000007 /* Embed App Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				E10000010000000000000001 /* Pin with Pinnest.appex in Embed App Extensions */,
+			);
+			name = "Embed App Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		28F4D6523019E8A900B60493 /* Pinnest.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Pinnest.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		28F4D6613019E8AA00B60493 /* PinnestTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PinnestTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		E10000030000000000000003 /* Pin with Pinnest.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = "Pin with Pinnest.appex"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -40,6 +63,13 @@
 			);
 			target = 28F4D6513019E8A900B60493 /* Pinnest */;
 		};
+		E10000040000000000000004 /* Exceptions for "PinWithPinnest" folder in "Pin with Pinnest" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = E10000080000000000000008 /* Pin with Pinnest */;
+		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -54,6 +84,14 @@
 		28F4D6643019E8AA00B60493 /* PinnestTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = PinnestTests;
+			sourceTree = "<group>";
+		};
+		E10000050000000000000005 /* PinWithPinnest */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				E10000040000000000000004 /* Exceptions for "PinWithPinnest" folder in "Pin with Pinnest" target */,
+			);
+			path = PinWithPinnest;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -76,6 +114,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		E10000060000000000000006 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -83,6 +128,7 @@
 			isa = PBXGroup;
 			children = (
 				28F4D6543019E8A900B60493 /* Pinnest */,
+				E10000050000000000000005 /* PinWithPinnest */,
 				28F4D6643019E8AA00B60493 /* PinnestTests */,
 				28F4D6533019E8A900B60493 /* Products */,
 			);
@@ -93,6 +139,7 @@
 			children = (
 				28F4D6523019E8A900B60493 /* Pinnest.app */,
 				28F4D6613019E8AA00B60493 /* PinnestTests.xctest */,
+				E10000030000000000000003 /* Pin with Pinnest.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -107,10 +154,12 @@
 				28F4D64E3019E8A900B60493 /* Sources */,
 				28F4D64F3019E8A900B60493 /* Frameworks */,
 				28F4D6503019E8A900B60493 /* Resources */,
+				E10000070000000000000007 /* Embed App Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				E100000B000000000000000B /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				28F4D6543019E8A900B60493 /* Pinnest */,
@@ -124,6 +173,28 @@
 			productName = Pinnest;
 			productReference = 28F4D6523019E8A900B60493 /* Pinnest.app */;
 			productType = "com.apple.product-type.application";
+		};
+		E10000080000000000000008 /* Pin with Pinnest */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = E100000E000000000000000E /* Build configuration list for PBXNativeTarget "Pin with Pinnest" */;
+			buildPhases = (
+				E100000A000000000000000A /* Sources */,
+				E10000060000000000000006 /* Frameworks */,
+				E10000090000000000000009 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				E10000050000000000000005 /* PinWithPinnest */,
+			);
+			name = "Pin with Pinnest";
+			packageProductDependencies = (
+			);
+			productName = "Pin with Pinnest";
+			productReference = E10000030000000000000003 /* Pin with Pinnest.appex */;
+			productType = "com.apple.product-type.app-extension";
 		};
 		28F4D6603019E8AA00B60493 /* PinnestTests */ = {
 			isa = PBXNativeTarget;
@@ -161,6 +232,9 @@
 					28F4D6513019E8A900B60493 = {
 						CreatedOnToolsVersion = 26.3;
 					};
+					E10000080000000000000008 = {
+						CreatedOnToolsVersion = 26.3;
+					};
 					28F4D6603019E8AA00B60493 = {
 						CreatedOnToolsVersion = 26.3;
 						TestTargetID = 28F4D6513019E8A900B60493;
@@ -187,6 +261,7 @@
 			projectRoot = "";
 			targets = (
 				28F4D6513019E8A900B60493 /* Pinnest */,
+				E10000080000000000000008 /* Pin with Pinnest */,
 				28F4D6603019E8AA00B60493 /* PinnestTests */,
 			);
 		};
@@ -201,6 +276,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		28F4D65F3019E8AA00B60493 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E10000090000000000000009 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -224,6 +306,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		E100000A000000000000000A /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -231,6 +320,11 @@
 			isa = PBXTargetDependency;
 			target = 28F4D6513019E8A900B60493 /* Pinnest */;
 			targetProxy = 28F4D6623019E8AA00B60493 /* PBXContainerItemProxy */;
+		};
+		E100000B000000000000000B /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = E10000080000000000000008 /* Pin with Pinnest */;
+			targetProxy = E10000020000000000000002 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -362,7 +456,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 3;
+				CURRENT_PROJECT_VERSION = 4;
 				DEVELOPMENT_TEAM = 7XRF3J9RS4;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -379,7 +473,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 1.0.2;
+				MARKETING_VERSION = 1.0.3;
 				PRODUCT_BUNDLE_IDENTIFIER = d.iota.Pinnest;
 				PRODUCT_MODULE_NAME = Pinnest;
 				PRODUCT_NAME = Pinnest;
@@ -401,7 +495,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 3;
+				CURRENT_PROJECT_VERSION = 4;
 				DEVELOPMENT_TEAM = 7XRF3J9RS4;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -418,7 +512,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 1.0.2;
+				MARKETING_VERSION = 1.0.3;
 				PRODUCT_BUNDLE_IDENTIFIER = d.iota.Pinnest;
 				PRODUCT_MODULE_NAME = Pinnest;
 				PRODUCT_NAME = Pinnest;
@@ -438,11 +532,11 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 3;
+				CURRENT_PROJECT_VERSION = 4;
 				DEVELOPMENT_TEAM = 7XRF3J9RS4;
 				GENERATE_INFOPLIST_FILE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 15.7;
-				MARKETING_VERSION = 1.0.2;
+				MARKETING_VERSION = 1.0.3;
 				PRODUCT_BUNDLE_IDENTIFIER = d.iota.PinnestTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
@@ -459,11 +553,11 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 3;
+				CURRENT_PROJECT_VERSION = 4;
 				DEVELOPMENT_TEAM = 7XRF3J9RS4;
 				GENERATE_INFOPLIST_FILE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 15.7;
-				MARKETING_VERSION = 1.0.2;
+				MARKETING_VERSION = 1.0.3;
 				PRODUCT_BUNDLE_IDENTIFIER = d.iota.PinnestTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
@@ -472,6 +566,66 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Pinnest.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Pinnest";
+			};
+			name = Release;
+		};
+		E100000C000000000000000C /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 4;
+				DEVELOPMENT_TEAM = 7XRF3J9RS4;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_USER_SELECTED_FILES = readonly;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = PinWithPinnest/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 15.7;
+				MARKETING_VERSION = 1.0.3;
+				PRODUCT_BUNDLE_IDENTIFIER = d.iota.Pinnest.PinWithPinnest;
+				PRODUCT_MODULE_NAME = PinWithPinnest;
+				PRODUCT_NAME = "Pin with Pinnest";
+				SKIP_INSTALL = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		E100000D000000000000000D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 4;
+				DEVELOPMENT_TEAM = 7XRF3J9RS4;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_USER_SELECTED_FILES = readonly;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = PinWithPinnest/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 15.7;
+				MARKETING_VERSION = 1.0.3;
+				PRODUCT_BUNDLE_IDENTIFIER = d.iota.Pinnest.PinWithPinnest;
+				PRODUCT_MODULE_NAME = PinWithPinnest;
+				PRODUCT_NAME = "Pin with Pinnest";
+				SKIP_INSTALL = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
 			};
 			name = Release;
 		};
@@ -501,6 +655,15 @@
 			buildConfigurations = (
 				28F4D6793019E8AA00B60493 /* Debug */,
 				28F4D67A3019E8AA00B60493 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		E100000E000000000000000E /* Build configuration list for PBXNativeTarget "Pin with Pinnest" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E100000C000000000000000C /* Debug */,
+				E100000D000000000000000D /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
