@@ -18,6 +18,22 @@ struct PinGeometryTests {
         #expect(size == CGSize(width: 800, height: 600))
     }
 
+    @Test func openingSizeFitsBothAxesWithoutUpscalingOrEnforcingTheManualZoomFloor() {
+        let screen = CGRect(x: -1600, y: 120, width: 1600, height: 900)
+        let centre = CGPoint(x: screen.midX + 80, y: screen.midY - 80)
+        for (base, expected) in [
+            (CGSize(width: 5000, height: 5000), CGSize(width: 900, height: 900)),
+            (CGSize(width: 32000, height: 1000), CGSize(width: 1600, height: 50)),
+            (CGSize(width: 320, height: 200), CGSize(width: 320, height: 200))
+        ] {
+            let scale = PinGeometry.openingScale(base: base, available: screen.size)
+            let size = PinGeometry.displaySize(base: base, scale: scale, quarterTurns: 0)
+            let frame = PinGeometry.openingFrame(centeredOn: centre, size: size, in: screen)
+            #expect(frame.size == expected)
+            #expect(screen.contains(frame))
+        }
+    }
+
     @Test func quarterTurnsSwapTheBoundingBox() {
         let base = CGSize(width: 400, height: 200)
         #expect(PinGeometry.displaySize(base: base, scale: 1, quarterTurns: 0) == CGSize(
@@ -139,8 +155,8 @@ struct PinGeometryTests {
             anchoredAt: .screenPoint(cursor),
             in: old
         )
-        #expect(new.maxX == cursor.x)
-        #expect(new.maxY == cursor.y)
+        #expect(new.maxX == old.maxX)
+        #expect(new.maxY == old.maxY)
     }
 
     @Test func scaleReachesOneThousandPercent() {

@@ -34,7 +34,10 @@ struct PinImageView: View {
             .clipped()
             .overlay {
                 if !state.isHidden {
-                    ScrollCatcher(controller: controller)
+                    WindowDragArea(
+                        onDrag: { controller.move(by: $0) },
+                        onScroll: { controller.handleScroll($0) }
+                    )
                 }
             }
         }
@@ -84,50 +87,5 @@ private struct HiddenPinIndicator: View {
             )
             .clipShape(Circle())
         }
-    }
-}
-
-/// SwiftUI has no scroll-wheel gesture on macOS, so a bare `NSView` carries the events.
-/// It deliberately implements nothing besides scrolling: leaving the rest alone is what
-/// lets the pin be dragged and clicked through.
-private struct ScrollCatcher: NSViewRepresentable {
-    unowned let controller: PinController
-
-    func makeNSView(context _: Context) -> ScrollCatcherView {
-        ScrollCatcherView(controller: controller)
-    }
-
-    func updateNSView(_ view: ScrollCatcherView, context _: Context) {
-        view.controller = controller
-    }
-}
-
-final class ScrollCatcherView: NSView {
-    @MainActor var controller: PinController?
-
-    init(controller: PinController) {
-        self.controller = controller
-        super.init(frame: .zero)
-    }
-
-    @available(*, unavailable)
-    required init?(coder _: NSCoder) {
-        fatalError("init(coder:) is unavailable")
-    }
-
-    override func acceptsFirstMouse(for _: NSEvent?) -> Bool {
-        true
-    }
-
-    override func scrollWheel(with event: NSEvent) {
-        controller?.handleScroll(event)
-    }
-
-    /// Dragging the image moves the pin. `performDrag(with:)` runs AppKit's own drag
-    /// loop, which beats relying on `isMovableByWindowBackground` — that only works if
-    /// nothing in the SwiftUI hierarchy claims the mouse-down first. Combined with
-    /// `acceptsFirstMouse`, a pin can be dragged without activating Pinnest.
-    override func mouseDown(with event: NSEvent) {
-        window?.performDrag(with: event)
     }
 }

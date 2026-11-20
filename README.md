@@ -30,7 +30,7 @@ Copy an image, pin it from the menu bar, and keep working. Each image remains in
 
 - **Pin from the clipboard:** Create an independent floating reference from the newest clipboard image with one menu command or <kbd>⌘V</kbd>.
 - **Always where you need it:** Pins float above ordinary windows and can appear on every virtual Desktop. Enable **Stubborn** to keep a pin on its current Desktop instead.
-- **Pointer-anchored zoom:** Scroll over an image to scale continuously toward the pointer. Use <kbd>⌘</kbd>+scroll to change opacity from 10% to 100%.
+- **Pointer-anchored zoom:** Large images open scaled to fit the display’s usable area; smaller images open at 100%. Scroll to zoom toward the pointer, or reset to native size (one image pixel per display pixel). Use <kbd>⌘</kbd>+scroll to change opacity from 10% to 100%.
 - **Hover toolbar:** Close, copy, drag as a promised PNG file, rotate in either direction, enter exact scale and opacity values, reset, move, toggle piercing, or toggle Stubborn mode.
 - **Piercing mode:** Make the image transparent to mouse input while its toolbar remains interactive, so you can reference it without blocking the application underneath.
 - **Spaces and full screen:** Shared pins remain at the same position across Spaces and over full-screen applications. Desktop-local pins participate in Mission Control normally.

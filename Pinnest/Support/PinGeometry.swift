@@ -21,6 +21,20 @@ enum PinGeometry {
         return CGSize(width: pixelSize.width / scale, height: pixelSize.height / scale)
     }
 
+    static func openingScale(base: CGSize, available: CGSize) -> CGFloat {
+        guard base.width > 0, base.height > 0, available.width > 0, available.height > 0 else { return 1 }
+        return min(1, available.width / base.width, available.height / base.height)
+    }
+
+    /// Keep a cascaded opening position if it fits; a screen-sized pin has no room to cascade.
+    static func openingFrame(centeredOn centre: CGPoint, size: CGSize, in screen: CGRect) -> CGRect {
+        var result = frame(centeredOn: centre, size: size)
+        guard !screen.isEmpty else { return result }
+        result.origin.x = min(max(result.minX, screen.minX), max(screen.minX, screen.maxX - size.width))
+        result.origin.y = min(max(result.minY, screen.minY), max(screen.minY, screen.maxY - size.height))
+        return result
+    }
+
     /// Quarter turns swap the bounding box, which is what the window has to resize to.
     static func displaySize(base: CGSize, scale: CGFloat, quarterTurns: Int) -> CGSize {
         let scaled = CGSize(width: base.width * scale, height: base.height * scale)
@@ -70,13 +84,13 @@ enum PinGeometry {
     static func frame(size: CGSize, anchoredAt anchor: Anchor, in old: CGRect) -> CGRect {
         switch anchor {
         case let .screenPoint(point):
-            // Where the point sat within the old frame, proportionally, is where it
-            // has to sit in the new one.
+            // Momentum can deliver an event after the pointer has left the image.
+            // Anchor to the nearest pixel in that case, not to the off-image pointer.
             let ratioX = old.width > 0 ? clamp((point.x - old.minX) / old.width, to: 0 ... 1) : 0.5
             let ratioY = old.height > 0 ? clamp((point.y - old.minY) / old.height, to: 0 ... 1) : 0.5
             return CGRect(
-                x: point.x - ratioX * size.width,
-                y: point.y - ratioY * size.height,
+                x: old.minX + ratioX * (old.width - size.width),
+                y: old.minY + ratioY * (old.height - size.height),
                 width: size.width,
                 height: size.height
             )

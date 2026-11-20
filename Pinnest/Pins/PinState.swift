@@ -14,8 +14,9 @@ import SwiftUI
 final class PinState {
     let image: NSImage
     let baseSize: CGSize
+    let scaleRange: ClosedRange<CGFloat>
 
-    private(set) var scale: CGFloat = 1
+    private(set) var scale: CGFloat
     private(set) var opacity: CGFloat = 1
     private(set) var quarterTurns = 0
     private(set) var isPiercing = false
@@ -25,9 +26,13 @@ final class PinState {
     private(set) var isToolbarVisible = false
     private(set) var hoveredHint: ToolbarHint?
 
-    init(image: NSImage, backingScale: CGFloat) {
+    init(image: NSImage, backingScale: CGFloat, availableSize: CGSize) {
         self.image = image
         baseSize = PinGeometry.baseSize(pixelSize: Self.pixelSize(of: image), backingScale: backingScale)
+        let fit = PinGeometry.openingScale(base: baseSize, available: availableSize)
+        scale = fit
+        // A panorama may open below 10%. Its first scroll must not snap it back to 10%.
+        scaleRange = min(fit, PinGeometry.scaleRange.lowerBound) ... PinGeometry.scaleRange.upperBound
     }
 
     var displaySize: CGSize {

@@ -19,7 +19,7 @@ struct ToolbarNumberField: View {
 
     @State private var isEditing = false
     @State private var text = ""
-    @State private var dragOrigin: CGFloat?
+    @State private var dragOrigin: (value: CGFloat, screenY: CGFloat)?
     @FocusState private var isFocused: Bool
 
     var body: some View {
@@ -55,13 +55,15 @@ struct ToolbarNumberField: View {
         .onHover { controller.setHint($0 ? hint : nil) }
     }
 
-    /// A vertical drag walks the value: 200 points of travel covers the whole range.
+    /// Once the toolbar flips below the image, resizing moves the control itself.
+    /// Measure subsequent motion on the screen, not in that moving control.
     private var dragGesture: some Gesture {
         DragGesture(minimumDistance: 2)
             .onChanged { gesture in
-                let origin = dragOrigin ?? value
+                let screenY = NSEvent.mouseLocation.y
+                let origin = dragOrigin ?? (value: value, screenY: screenY + gesture.translation.height)
                 dragOrigin = origin
-                onChange(origin - gesture.translation.height / 200)
+                onChange(origin.value + (screenY - origin.screenY) / 200)
             }
             .onEnded { _ in dragOrigin = nil }
     }

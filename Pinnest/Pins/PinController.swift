@@ -51,10 +51,15 @@ final class PinController {
 
     init(image: NSImage, centredOn centre: CGPoint, manager: PinManager) {
         let screen = NSScreen.screens.first { $0.frame.contains(centre) } ?? NSScreen.main
-        state = PinState(image: image, backingScale: screen?.backingScaleFactor ?? 2)
+        let availableFrame = screen?.visibleFrame ?? .zero
+        state = PinState(
+            image: image,
+            backingScale: screen?.backingScaleFactor ?? 1,
+            availableSize: availableFrame.size
+        )
         self.manager = manager
 
-        configurePanel(centredOn: centre)
+        configurePanel(centredOn: centre, in: availableFrame)
         panel.orderFrontRegardless()
         chrome = ToolbarPresenter(
             attachedTo: panel,
@@ -69,8 +74,7 @@ final class PinController {
         ) { [weak self] _ in
             MainActor.assumeIsolated {
                 guard let self, !self.isApplyingGeometry, !self.state.isHidden else { return }
-                // Dragging moves the window behind our back, so the exact frame has to
-                // pick the new origin back up.
+                // AppKit can reposition a window when a display is disconnected.
                 self.exactFrame.origin = self.panel.frame.origin
                 self.layoutToolbar()
             }
@@ -79,17 +83,22 @@ final class PinController {
 
     // MARK: Setup
 
-    private func configurePanel(centredOn centre: CGPoint) {
-        let screen = NSScreen.screens.first { $0.frame.contains(centre) } ?? NSScreen.main
-        let availableFrame = screen?.visibleFrame ?? .zero
+    private func configurePanel(centredOn centre: CGPoint, in availableFrame: CGRect) {
         panel.configureAsPinSurface()
         panel.hasShadow = true
-        panel.contentView = NSHostingView(rootView: PinImageView(state: state, controller: self))
-        exactFrame = PinGeometry.constrain(
-            PinGeometry.frame(centeredOn: centre, size: state.displaySize),
-            to: availableFrame
-        )
+        panel.isMovable = false
+        exactFrame = PinGeometry.openingFrame(centeredOn: centre, size: state.displaySize, in: availableFrame)
         panel.setFrame(exactFrame, display: false)
+
+        // A root NSHostingView negotiates the window's content size during layout.
+        // The panel owns its size; only resize the hosted image to follow its bounds.
+        let content = NSView(frame: CGRect(origin: .zero, size: exactFrame.size))
+        let hosting = NSHostingView(rootView: PinImageView(state: state, controller: self))
+        hosting.sizingOptions = []
+        hosting.frame = content.bounds
+        hosting.autoresizingMask = [.width, .height]
+        content.addSubview(hosting)
+        panel.contentView = content
     }
 
     // MARK: Interaction
@@ -116,7 +125,9 @@ final class PinController {
     }
 
     func setScale(_ scale: CGFloat, anchor: PinGeometry.Anchor = .topCentre) {
-        state.apply(scale: PinGeometry.clamp(scale, to: PinGeometry.scaleRange))
+        let scale = PinGeometry.clamp(scale, to: state.scaleRange)
+        guard scale != state.scale else { return }
+        state.apply(scale: scale)
         applyGeometry(anchor: anchor)
     }
 
@@ -192,7 +203,9 @@ final class PinController {
     func endEditingNumber() {
         isEditingNumber = false
         chrome?.setAcceptsKey(false)
-        if NSApp.isActive { NSApp.deactivate() }
+        if NSApp.isActive {
+            NSApp.deactivate()
+        }
     }
 
     // MARK: Hover
@@ -223,7 +236,9 @@ final class PinController {
     func setToolbar(visible: Bool) {
         guard state.isToolbarVisible != visible else { return }
         state.apply(isToolbarVisible: visible)
-        if !visible { setHint(nil) }
+        if !visible {
+            setHint(nil)
+        }
         chrome?.setVisible(visible)
     }
 

@@ -6,7 +6,7 @@
 import AppKit
 import SwiftUI
 
-/// The toolbar handle and hidden indicator's shared move surface.
+/// Drag surface shared by the image, toolbar grip, and hidden indicator.
 ///
 /// Deltas are taken from `NSEvent.mouseLocation`, in screen coordinates, rather than
 /// from a SwiftUI `DragGesture`. A gesture reports translation in the view's own
@@ -17,21 +17,25 @@ struct WindowDragArea: NSViewRepresentable {
     let onDrag: (CGSize) -> Void
     let onClick: (() -> Void)?
     let onHover: ((Bool) -> Void)?
+    let onScroll: ((NSEvent) -> Void)?
 
     init(
         onDrag: @escaping (CGSize) -> Void,
         onClick: (() -> Void)? = nil,
-        onHover: ((Bool) -> Void)? = nil
+        onHover: ((Bool) -> Void)? = nil,
+        onScroll: ((NSEvent) -> Void)? = nil
     ) {
         self.onDrag = onDrag
         self.onClick = onClick
         self.onHover = onHover
+        self.onScroll = onScroll
     }
 
     func makeNSView(context _: Context) -> WindowDragView {
         let view = WindowDragView()
         view.onDrag = onDrag
         view.onClick = onClick
+        view.onScroll = onScroll
         view.onHover = onHover
         return view
     }
@@ -40,6 +44,7 @@ struct WindowDragArea: NSViewRepresentable {
         view.onDrag = onDrag
         view.onClick = onClick
         view.onHover = onHover
+        view.onScroll = onScroll
     }
 }
 
@@ -47,6 +52,7 @@ final class WindowDragView: NSView {
     var onDrag: ((CGSize) -> Void)?
     var onClick: (() -> Void)?
     var onHover: ((Bool) -> Void)?
+    var onScroll: ((NSEvent) -> Void)?
 
     private var lastLocation: CGPoint?
     private var didDrag = false
@@ -60,7 +66,9 @@ final class WindowDragView: NSView {
     /// usually not the active app, and without it the cursor would never update.
     override func updateTrackingAreas() {
         super.updateTrackingAreas()
-        if let trackingArea { removeTrackingArea(trackingArea) }
+        if let trackingArea {
+            removeTrackingArea(trackingArea)
+        }
         let area = NSTrackingArea(
             rect: .zero,
             options: [.cursorUpdate, .mouseEnteredAndExited, .activeAlways, .inVisibleRect],
@@ -83,6 +91,14 @@ final class WindowDragView: NSView {
         guard lastLocation == nil else { return }
         onHover?(false)
         NSCursor.arrow.set()
+    }
+
+    override func scrollWheel(with event: NSEvent) {
+        if let onScroll {
+            onScroll(event)
+        } else {
+            super.scrollWheel(with: event)
+        }
     }
 
     override func mouseDown(with _: NSEvent) {
@@ -110,7 +126,9 @@ final class WindowDragView: NSView {
         if !bounds.contains(convert(event.locationInWindow, from: nil)) {
             onHover?(false)
         }
-        if shouldClick { onClick?() }
+        if shouldClick {
+            onClick?()
+        }
     }
 
     private var currentCursor: NSCursor {

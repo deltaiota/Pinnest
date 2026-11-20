@@ -29,7 +29,7 @@ struct PinToolbarView: View {
                 symbol: .arrowUpLeftAndArrowDownRight,
                 hint: .scale,
                 value: state.scale,
-                range: PinGeometry.scaleRange,
+                range: state.scaleRange,
                 controller: controller
             ) { controller.setScale($0) }
             ToolbarNumberField(

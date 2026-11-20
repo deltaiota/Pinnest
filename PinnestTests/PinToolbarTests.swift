@@ -48,6 +48,69 @@ extension PinWindowSuite {
             #expect(steps.allSatisfy { $0 <= 0 } || steps.allSatisfy { $0 >= 0 })
         }
 
+        @Test func interactingWithAPinAcrossTheMenuBarDoesNotResizeIt() async throws {
+            let screen = try #require(NSScreen.main)
+            let visible = screen.visibleFrame
+            let pointer = CGPoint(x: visible.midX, y: visible.maxY - 30)
+            let manager = PinManager(hoverMonitoring: false)
+            let controller = PinController(
+                image: PinTest.image(width: 180, height: 120),
+                centredOn: pointer,
+                manager: manager
+            )
+            defer { controller.close() }
+            controller.setScale(3, anchor: .screenPoint(pointer))
+            let panel = controller.panel
+            let zoomed = panel.frame
+            #expect(zoomed.maxY > visible.maxY)
+
+            for type in [NSEvent.EventType.leftMouseDown, .leftMouseUp] {
+                let event = try #require(NSEvent.mouseEvent(
+                    with: type, location: panel.convertPoint(fromScreen: pointer), modifierFlags: [],
+                    timestamp: ProcessInfo.processInfo.systemUptime, windowNumber: panel.windowNumber,
+                    context: nil, eventNumber: 0, clickCount: 1, pressure: 0
+                ))
+                panel.sendEvent(event)
+            }
+            controller.move(by: CGSize(width: 8, height: -3))
+            await Task.yield()
+            #expect(panel.frame == zoomed.offsetBy(dx: 8, dy: -3))
+            controller.setScale(3.1, anchor: .screenPoint(pointer))
+            #expect(abs(panel.frame.height - zoomed.height * 3.1 / 3) < 1)
+        }
+
+        @Test func tallImageOpensFittedButResetsToOneDevicePixelPerImagePixel() async throws {
+            let screen = try #require(NSScreen.main)
+            let visible = screen.visibleFrame
+            let pixels = Int(visible.height * screen.backingScaleFactor * 2)
+            // A narrow strip exercises an oversized bitmap without allocating a full-screen texture.
+            let bitmap = try #require(NSBitmapImageRep(
+                bitmapDataPlanes: nil, pixelsWide: 96, pixelsHigh: pixels, bitsPerSample: 8,
+                samplesPerPixel: 4, hasAlpha: true, isPlanar: false, colorSpaceName: .deviceRGB,
+                bytesPerRow: 0,
+                bitsPerPixel: 32
+            ))
+            let image = NSImage(size: bitmap.size)
+            image.addRepresentation(bitmap)
+            let manager = PinManager(hoverMonitoring: false)
+            let controller = PinController(
+                image: image,
+                centredOn: CGPoint(x: visible.midX + 40, y: visible.midY - 40),
+                manager: manager
+            )
+            defer { controller.close() }
+            let panel = controller.panel
+            #expect(visible.contains(panel.frame))
+            #expect(abs(panel.frame.height - visible.height) < 1)
+            #expect(controller.state.scale < 1)
+
+            controller.reset()
+            let nativeHeight = CGFloat(pixels) / screen.backingScaleFactor
+            let restored = try await PinTest.wait { abs(panel.frame.height - nativeHeight) < 1 }
+            #expect(restored)
+            #expect(controller.state.scale == 1)
+        }
+
         @Test func resetReturnsToTheOriginalGeometry() async throws {
             let manager = PinManager(hoverMonitoring: false)
             defer { manager.closeAll() }
