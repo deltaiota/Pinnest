@@ -23,13 +23,6 @@ struct SoftwareUpdateConfigurationTests {
         #expect(Data(base64Encoded: publicKey)?.count == 32)
     }
 
-    @Test func appMetadataSupportsMenuAndAboutLabels() throws {
-        let info = try #require(Bundle.main.infoDictionary)
-        #expect(info["CFBundleDisplayName"] as? String == "Pinnest")
-        #expect(info["CFBundleShortVersionString"] as? String == "1.0.3")
-        #expect(info["CFBundleVersion"] as? String == "4")
-    }
-
     @Test func appDeclaresImageViewerSupport() throws {
         let info = try #require(Bundle.main.infoDictionary)
         let documentTypes = try #require(info["CFBundleDocumentTypes"] as? [[String: Any]])

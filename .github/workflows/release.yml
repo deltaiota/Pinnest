@@ -158,6 +158,30 @@ jobs:
             echo "Signed app was not produced at $app" >&2
             exit 1
           }
+          # `xcodebuild build` signs the framework on copy, but not its nested tools.
+          framework="$app/Contents/Frameworks/Sparkle.framework"
+          helpers="$framework/Versions/B"
+          sign=(codesign --force --keychain "$RELEASE_KEYCHAIN" --sign "Apple Development" --options runtime)
+          "${sign[@]}" --preserve-metadata=entitlements "$helpers/XPCServices/Downloader.xpc"
+          "${sign[@]}" "$helpers/XPCServices/Installer.xpc"
+          "${sign[@]}" "$helpers/Autoupdate"
+          "${sign[@]}" "$helpers/Updater.app"
+          "${sign[@]}" "$framework"
+          "${sign[@]}" --preserve-metadata=entitlements "$app"
+
+          # Verify the packaged host can reach the update services without network access.
+          codesign -d --entitlements - --xml "$app" > "$RUNNER_TEMP/host-entitlements.plist"
+          python3 - "$app/Contents/Info.plist" "$RUNNER_TEMP/host-entitlements.plist" <<'PY'
+          import plistlib, sys
+          with open(sys.argv[1], "rb") as file:
+              info = plistlib.load(file)
+          with open(sys.argv[2], "rb") as file:
+              rights = plistlib.load(file)
+          assert info["SUEnableDownloaderService"] and info["SUEnableInstallerLauncherService"]
+          assert rights["com.apple.security.app-sandbox"] and not rights.get("com.apple.security.network.client")
+          bundle = info["CFBundleIdentifier"]
+          assert set(rights["com.apple.security.temporary-exception.mach-lookup.global-name"]) == {bundle + "-spks", bundle + "-spki"}
+          PY
           codesign --verify --deep --strict --verbose=2 "$app"
           signature_info="$(codesign -dv --verbose=4 "$app" 2>&1)"
           printf '%s\n' "$signature_info"
